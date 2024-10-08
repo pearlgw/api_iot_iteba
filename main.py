@@ -5,12 +5,16 @@ import uuid
 from fastapi.responses import FileResponse # type: ignore
 import os
 import pymysql # type: ignore
+from dotenv import load_dotenv # type: ignore
+
+load_dotenv('.env')
 
 db = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='',
-    database='apiiteba'
+    port=os.getenv('DB_PORT'),
+    host=os.getenv('DB_HOST'),
+    user=os.getenv('DB_USER'),
+    password=os.getenv('DB_PASSWORD'),
+    database=os.getenv('DB_DATABASE')
 )
 
 IMAGEDIR = "images/"
@@ -55,3 +59,17 @@ async def show_image(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     return FileResponse(file_path)
+
+
+# butuh python.env
+# isi env ini
+# import pymysql # type: ignore
+
+# db = pymysql.connect(
+#     host='localhost',
+#     user='root',
+#     password='',
+#     database='apiiteba'
+# )
+
+# referensi pakai sqlachamey

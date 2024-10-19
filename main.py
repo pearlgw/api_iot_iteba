@@ -150,7 +150,7 @@ async def create_upload_file(file: UploadFile = File(...), device_id: str = Form
         )
         db.add(new_image)
         db.commit()
-        db.refresh(new_image)
+        # db.refresh(new_image)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error saving image to database: {str(e)}")

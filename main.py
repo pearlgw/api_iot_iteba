@@ -150,7 +150,7 @@ async def create_upload_file(file: UploadFile = File(...), device_id: str = Form
         )
         db.add(new_image)
         db.commit()
-        # db.refresh(new_image)
+        db.refresh(new_image)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error saving image to database: {str(e)}")
@@ -194,11 +194,31 @@ async def create_upload_file(file: UploadFile = File(...), device_id: str = Form
 
     # Tentukan level berdasarkan jumlah deteksi (total_count)
     if total_count < 3:
-        level = 'Rendah'
+        level = 'rendah'  # Rendah
     elif total_count < 6:
-        level = 'Sedang'
+        level = 'sedang'  # Sedang
     else:
-        level = 'Tinggi'
+        level = 'tinggi'  # Parah
+
+    # Update kolom tambahan ke database setelah YOLO memproses
+    db = SessionLocal()
+    try:
+        # Ambil objek image yang sudah ada
+        db_image = db.query(Image).filter(Image.id == new_image.id).first()
+
+        # Update kolom filename_labeled, labeled_filepath, count, dan level
+        db_image.filename_labeled = labeled_filename
+        db_image.labeled_filepath = labeled_image_path
+        db_image.count = total_count
+        db_image.level = level
+
+        # Simpan perubahan
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating image in database: {str(e)}")
+    finally:
+        db.close()
 
     # Kembalikan respons dengan data gambar yang diunggah dan diproses
     return {

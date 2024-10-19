@@ -30,7 +30,7 @@ Base = declarative_base()
 class Image(Base):
     __tablename__ = "images"
 
-    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String(255), nullable=False)
     filepath = Column(String(255), nullable=False)
     device_id = Column(String(255), nullable=False)
@@ -66,7 +66,7 @@ class ImageLabeled(Base):
 
 # Model Pydantic untuk response
 class ImageResponse(BaseModel):
-    id: str  # Ubah ini menjadi string
+    id: int  # Ubah ini menjadi string
     filename: str
     filepath: str
     device_id: str
@@ -109,7 +109,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Ganti dengan URL frontend Anda
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -127,7 +127,7 @@ CLASS_NAMES = ['baja', 'ban_karet', 'batu', 'botol_kaca', 'botol_minum_plastik',
                'kaleng', 'kantong_plastik', 'kardus', 'kayu', 'kertas', 'pipa', 'plastik_makanan',
                'sedotan', 'sendal', 'sendok_plastik', 'tissue', 'tutup_minum_plastik']
 
-@app.post("/upload/", response_model=ImageResponse)
+@app.post("/upload/")
 async def create_upload_file(file: UploadFile = File(...), device_id: str = Form(...)):
     # Buat nama file pake uuid
     file.filename = f"{uuid.uuid4()}.jpg"
@@ -142,7 +142,6 @@ async def create_upload_file(file: UploadFile = File(...), device_id: str = Form
     db = SessionLocal()
     try:
         new_image = Image(
-            id=str(uuid.uuid4()),  # Menghasilkan UUID sebagai string
             filename=file.filename,
             filepath=file_path,
             device_id=device_id,
@@ -220,20 +219,18 @@ async def create_upload_file(file: UploadFile = File(...), device_id: str = Form
     finally:
         db.close()
 
-    # Kembalikan respons dengan data gambar yang diunggah dan diproses
+    # Kembalikan respons dalam format dictionary
     return {
-        "id": new_image.id,
+        "id": str(new_image.id),  # Mengubah ID menjadi string
         "filename": file.filename,  # Nama file asli
-        "filename_labeled": labeled_filename,  # Nama file yang sudah diberi label
         "filepath": file_path,  # Lokasi file asli di IMAGEDIR
-        "labeled_filepath": labeled_image_path,  # Lokasi file setelah diberi label di LABELED_FOLDER
         "device_id": device_id,
         "upload_time": new_image.upload_time,
-        "class_count": class_count,  # Jumlah deteksi per kelas
-        "count": total_count,  # Total semua objek yang terdeteksi
-        "level": level  # Level berdasarkan jumlah deteksi
+        "filename_labeled": labeled_filename,
+        "labeled_filepath": labeled_image_path,
+        "count": total_count,
+        "level": level,
     }
-
 
 # @app.post("/upload/", response_model=ImageResponse)
 # async def create_upload_file(file: UploadFile = File(...), device_id: str = Form(...)):
